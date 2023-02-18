@@ -6,6 +6,7 @@ import FileInput from '@/components/FileInput';
 import Button from '@/components/Button';
 import Section from '@/components/Section';
 import { Loader } from 'react-feather';
+import { fetchBuild } from '@/utils/build';
 
 export default function Home() {
   const [step, setStep] = useState(0);
@@ -19,6 +20,14 @@ export default function Home() {
 
   const asciiAlphanumericRule = useMemo(() => new RegExp("^[A-Za-z\-0-9]*$"), []);
   const versionRule = useMemo(() => new RegExp("^[0-9\.]*$"), []);
+
+  function handleClickBuild() {
+    if (file == null) return;
+    fetchBuild({ file, name, nameEn, author, version, desc })
+      .then(console.log)
+      .catch(console.error);
+    setStep(2);
+  }
 
   return (
     <>
@@ -77,7 +86,7 @@ export default function Home() {
             </div>
             <div className='flex gap-2'>
               <Button title='이전' outline onClick={() => setStep(0)} />
-              <Button title='빌드하기' onClick={() => setStep(2)} disabled={!nameEn || !author} />
+              <Button title='빌드하기' onClick={handleClickBuild} disabled={!nameEn || !author} />
             </div>
           </div>
         </Section>
