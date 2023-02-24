@@ -6,10 +6,11 @@ import FileInput from '@/components/FileInput';
 import Button from '@/components/Button';
 import Section from '@/components/Section';
 import { Loader } from 'react-feather';
-import { fetchBuild } from '@/utils/build';
+import { uploadFile, UploadType } from '@/utils/fetch';
 
 export default function Home() {
   const [step, setStep] = useState(0);
+  const [waiting, setWaiting] = useState(false);
 
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
@@ -21,11 +22,23 @@ export default function Home() {
   const asciiAlphanumericRule = useMemo(() => new RegExp("^[A-Za-z\-0-9]*$"), []);
   const versionRule = useMemo(() => new RegExp("^[0-9\.]*$"), []);
 
-  function handleClickBuild() {
+  function handleUploadClick() {
     if (file == null) return;
-    fetchBuild({ file, name, nameEn, author, version, desc })
+
+    setWaiting(true);
+    uploadFile({
+      file,
+      type: UploadType.ENTRY,
+    })
       .then(console.log)
-      .catch(console.error);
+      .then(() => setStep(1))
+      .finally(() => setWaiting(false))
+  }
+  function handleBuildClick() {
+    // if (file == null) return;
+    // run_build({ file, name, nameEn, author, version, desc })
+    //   .then(console.log)
+    //   .catch(console.error);
     setStep(2);
   }
 
@@ -44,7 +57,7 @@ export default function Home() {
           <div>
             <FileInput onChange={f => setFile(f || null)} />
             <div className='flex gap-2'>
-              <Button title='다음' onClick={() => setStep(1)} disabled={!file} />
+              <Button title='업로드하기' onClick={handleUploadClick} disabled={!file || waiting} />
             </div>
           </div>
         </Section>
@@ -86,7 +99,7 @@ export default function Home() {
             </div>
             <div className='flex gap-2'>
               <Button title='이전' outline onClick={() => setStep(0)} />
-              <Button title='빌드하기' onClick={handleClickBuild} disabled={!nameEn || !author} />
+              <Button title='빌드하기' onClick={handleBuildClick} disabled={!nameEn || !author} />
             </div>
           </div>
         </Section>
