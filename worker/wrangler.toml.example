@@ -11,3 +11,8 @@ command = "cargo install -q worker-build --version 0.0.9 && worker-build --relea
 binding = "HOLSSI_BUCKET"
 bucket_name = "" # fill here
 preview_bucket_name = "" # fill here
+
+[[kv_namespaces]]
+binding = "holssi"
+id = "" # fill here
+preview_id = "" # fill here

@@ -1,5 +1,11 @@
+use body::BuildInfo;
+use project::{Project, ProjectStatus};
+use rate_limit::RateLimit;
 use worker::*;
 
+mod body;
+mod project;
+mod rate_limit;
 mod utils;
 
 fn log_request(req: &Request) {
@@ -22,29 +28,70 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
 
     router
         .get("/", |_, _| Response::ok("Hello from Holssi Workers!"))
-        .post_async("/upload/:type", |mut req, ctx| async move {
-            if let Some(upload_type) = ctx.param("type") {
-                let form = req.form_data().await?;
-                match form.get("file") {
-                    Some(FormEntry::File(file)) => {
-                        // TODO: verify uploaded file: file type, size, etc
-                        let bucket = ctx.bucket("HOLSSI_BUCKET")?;
-                        let key = format!("{upload_type}/{}", file.name());
-                        bucket.put(&key, file.bytes().await?).execute().await?;
-                        let res = UploadResponse { key };
-                        return Response::from_json(&res);
-                    }
-                    _ => return Response::error("Bad Request", 400),
-                }
-            }
+        .post_async("/create", |mut req, ctx| async move {
+            let kv = ctx.kv("holssi")?;
 
-            Response::error("Bad Request", 400)
+            // rate limit
+            let ip = req
+                .headers()
+                .get("CF-Connecting-IP")?
+                .unwrap_or_else(|| "0.0.0.0".to_string());
+            let key = format!("ratelimit:{ip}");
+            let mut rate_limit = match kv.get(&key).json::<RateLimit>().await? {
+                Some(val) => val,
+                None => RateLimit::new(),
+            };
+            if !rate_limit.is_ok() {
+                return Response::error("Too Many Requests", 429);
+            }
+            rate_limit.update();
+            kv.put(&key, &rate_limit)?
+                .expiration(rate_limit.reset_date().timestamp().try_into().unwrap())
+                .execute()
+                .await?;
+
+            let form = req.form_data().await?;
+            match form.get("file") {
+                Some(FormEntry::File(file)) => {
+                    if !file.name().ends_with(".ent") || file.size() > 2 * 1024 * 1024 {
+                        return Response::error("Bad Request", 400);
+                    }
+
+                    let project = Project::new(file.name());
+
+                    let bucket = ctx.bucket("HOLSSI_BUCKET")?;
+                    let key = project.entry_key();
+                    bucket.put(&key, file.bytes().await?).execute().await?;
+
+                    kv.put(&project.key(), &project)?.execute().await?;
+
+                    Response::from_json(&project)
+                }
+                _ => Response::error("Bad Request", 400),
+            }
+        })
+        .post_async("/build", |mut req, ctx| async move {
+            let build_info = req.json::<BuildInfo>().await?;
+            let kv = ctx.kv("holssi")?;
+            match kv
+                .get(&Project::get_key(build_info.uid()))
+                .json::<Project>()
+                .await?
+            {
+                Some(mut project) => {
+                    // TODO: trigger actual build
+
+                    project.set_status(ProjectStatus::Building);
+                    kv.put(&project.key(), &project)?.execute().await?;
+
+                    Response::from_json(&project)
+                }
+                None => Response::error("Bad Request", 400),
+            }
+        })
+        .post_async("/finished", |mut req, ctx| async move {
+            todo!()
         })
         .run(req, env)
         .await
-}
-
-#[derive(serde::Serialize)]
-struct UploadResponse {
-    key: String,
 }

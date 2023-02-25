@@ -6,7 +6,7 @@ import FileInput from '@/components/FileInput';
 import Button from '@/components/Button';
 import Section from '@/components/Section';
 import { Loader } from 'react-feather';
-import { uploadFile, UploadType } from '@/utils/fetch';
+import { createAndUpload, runBuild, UploadType } from '@/utils/fetch';
 
 export default function Home() {
   const [step, setStep] = useState(0);
@@ -18,6 +18,7 @@ export default function Home() {
   const [author, setAuthor] = useState("");
   const [version, setVersion] = useState("");
   const [desc, setDesc] = useState("");
+  const [uid, setUid] = useState("");
 
   const asciiAlphanumericRule = useMemo(() => new RegExp("^[A-Za-z\-0-9]*$"), []);
   const versionRule = useMemo(() => new RegExp("^[0-9\.]*$"), []);
@@ -26,20 +27,25 @@ export default function Home() {
     if (file == null) return;
 
     setWaiting(true);
-    uploadFile({
+    createAndUpload({
       file,
       type: UploadType.ENTRY,
     })
-      .then(console.log)
+      .then(data => {
+        console.log(data);
+        setUid(data.uid);
+      })
       .then(() => setStep(1))
+      .catch(err => console.error(err))
       .finally(() => setWaiting(false))
   }
   function handleBuildClick() {
-    // if (file == null) return;
-    // run_build({ file, name, nameEn, author, version, desc })
-    //   .then(console.log)
-    //   .catch(console.error);
-    setStep(2);
+    setWaiting(true);
+    runBuild({ uid, name, nameEn, author, version, desc })
+      .then(console.log)
+      .then(() => setStep(2))
+      .catch(console.error)
+      .finally(() => setWaiting(false))
   }
 
   return (
@@ -99,7 +105,7 @@ export default function Home() {
             </div>
             <div className='flex gap-2'>
               <Button title='이전' outline onClick={() => setStep(0)} />
-              <Button title='빌드하기' onClick={handleBuildClick} disabled={!nameEn || !author} />
+              <Button title='빌드하기' onClick={handleBuildClick} disabled={!nameEn || !author || waiting} />
             </div>
           </div>
         </Section>
