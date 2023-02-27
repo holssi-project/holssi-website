@@ -1,16 +1,20 @@
 use std::{env, net::SocketAddr, sync::Arc};
 
 use axum::{
+    extract::DefaultBodyLimit,
     http::{header, HeaderValue, Method, StatusCode},
     response::{IntoResponse, Response},
     routing::{get, post},
-    Router,
+    Json, Router,
 };
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use common::AppRes;
+use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::route::{create, status};
+use crate::route::{create, status, upload_ent};
 
+mod common;
+mod file;
 mod project;
 mod route;
 
@@ -30,12 +34,19 @@ async fn main() {
         .await
         .expect("cannot connect to db");
 
-    let shared_state = Arc::new(AppState { db });
+    let s3 = {
+        let endpoint = env::var("AWS_ENDPOINT").expect("env AWS_ENDPOINT not fount");
+        let s3_config = aws_config::from_env().endpoint_url(endpoint).load().await;
+        aws_sdk_s3::Client::new(&s3_config)
+    };
+
+    let shared_state = Arc::new(AppState { db, s3 });
 
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
-        .route("/create", post(create))
-        .route("/status", get(status))
+        .route("/project/create", post(create))
+        .route("/project/:id/upload_ent", post(upload_ent))
+        .route("/project/:id/status", get(status))
         .with_state(shared_state)
         .layer(TraceLayer::new_for_http())
         .layer(
@@ -48,7 +59,11 @@ async fn main() {
                 )
                 .allow_methods([Method::GET, Method::POST])
                 .allow_headers([header::CONTENT_TYPE]),
-        );
+        )
+        .layer(DefaultBodyLimit::disable())
+        .layer(RequestBodyLimitLayer::new(
+            200 * 1024 * 1024, /* 200mb */
+        ));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 9000));
     tracing::debug!("listening on {}", addr);
@@ -60,6 +75,7 @@ async fn main() {
 
 struct AppState {
     db: edgedb_tokio::Client,
+    s3: aws_sdk_s3::Client,
 }
 
 struct AppError(anyhow::Error);
@@ -69,7 +85,7 @@ impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Something went wrong: {}", self.0),
+            Json(AppRes::fail(format!("Something went wrong: {}", self.0))),
         )
             .into_response()
     }
