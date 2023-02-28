@@ -1,3 +1,4 @@
+use axum::Json;
 use edgedb_derive::Queryable;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -13,16 +14,16 @@ pub(crate) struct AppRes<T> {
     data: T,
 }
 impl<T> AppRes<T> {
-    pub(crate) fn success(data: T) -> AppRes<T> {
-        AppRes {
+    pub(crate) fn success(data: T) -> Json<AppRes<T>> {
+        Json(AppRes {
             success: true,
             data,
-        }
+        })
     }
-    pub(crate) fn fail(data: T) -> AppRes<T> {
-        AppRes {
+    pub(crate) fn fail(data: T) -> Json<AppRes<T>> {
+        Json(AppRes {
             success: false,
             data,
-        }
+        })
     }
 }

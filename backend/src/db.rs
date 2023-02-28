@@ -1,7 +1,12 @@
 use anyhow::Context;
 use uuid::Uuid;
 
-use crate::{common::ObjectId, file::FileQuery, project::ProjectQuery, Result};
+use crate::{
+    common::ObjectId,
+    file::FileQuery,
+    project::{ProjectQuery, ProjectSimple},
+    Result,
+};
 
 pub(crate) struct DB(edgedb_tokio::Client);
 
@@ -20,17 +25,42 @@ impl DB {
             .await?;
         Ok(result)
     }
+    pub(crate) async fn select_project_simple(&self, id: &Uuid) -> Result<ProjectSimple> {
+        let result = self
+            .0
+            .query_required_single::<ProjectQuery, _>(
+                r#"
+                select Project {
+                  id, created, status,
+                  entry_file: { id, created, name },
+                  executable: { id, created, name },
+                  exe_nonce
+                } filter .id = <uuid>$0;
+                "#,
+                &(id,),
+            )
+            .await?
+            .into();
+        Ok(result)
+    }
     pub(crate) async fn select_project(&self, id: &Uuid) -> Result<ProjectQuery> {
         let result = self
             .0
             .query_required_single::<ProjectQuery, _>(
-                "select Project { id, created, status } filter .id = <uuid>$0;",
+                r#"
+                select Project {
+                  id, created, status,
+                  entry_file: { id, created, name },
+                  executable: { id, created, name },
+                  exe_nonce
+                } filter .id = <uuid>$0;
+                "#,
                 &(id,),
             )
             .await?;
         Ok(result)
     }
-    pub(crate) async fn update_project_ent_file(
+    pub(crate) async fn add_ent_file_to_project(
         &self,
         project_id: &Uuid,
         file_id: &Uuid,
@@ -39,12 +69,34 @@ impl DB {
             .0
             .query_required_single::<ObjectId, _>(
                 r#"
-                        update Project
-                        filter .id = <uuid>$0
-                        set {
-                        entry_file := (select File filter .id = <uuid>$1)
-                        }
-                        "#,
+                update Project
+                filter .id = <uuid>$0
+                set {
+                entry_file := (select File filter .id = <uuid>$1),
+                status := ProjectStatus.Uploaded,
+                };
+                "#,
+                &(project_id, file_id),
+            )
+            .await?;
+        Ok(result)
+    }
+    pub(crate) async fn add_exe_file_to_project(
+        &self,
+        project_id: &Uuid,
+        file_id: &Uuid,
+    ) -> Result<ObjectId> {
+        let result = self
+            .0
+            .query_required_single::<ObjectId, _>(
+                r#"
+                update Project
+                filter .id = <uuid>$0
+                set {
+                executable := (select File filter .id = <uuid>$1),
+                status := ProjectStatus.Success,
+                };
+                "#,
                 &(project_id, file_id),
             )
             .await?;

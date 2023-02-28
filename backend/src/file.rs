@@ -28,11 +28,7 @@ impl File {
         s3: &aws_sdk_s3::Client,
         body: ByteStream,
     ) -> crate::Result<()> {
-        s3.put_object()
-            .key(self.key())
-            .body(body)
-            .send()
-            .await?;
+        s3.put_object().key(self.key()).body(body).send().await?;
 
         Ok(())
     }

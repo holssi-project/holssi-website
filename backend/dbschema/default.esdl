@@ -1,5 +1,5 @@
 module default {
-  scalar type ProjectStatus extending enum<Created, Building, Finished>;
+  scalar type ProjectStatus extending enum<Created, Uploaded, Building, Success, Failed>;
 
   type Project {
     required property status -> ProjectStatus {
@@ -11,6 +11,7 @@ module default {
       default := datetime_current();
       readonly := true;
     };
+    property exe_nonce -> str;
   }
 
   type File {

@@ -5,14 +5,14 @@ use axum::{
     http::{header, HeaderValue, Method, StatusCode},
     response::{IntoResponse, Response},
     routing::{get, post},
-    Json, Router,
+    Router,
 };
 use common::AppRes;
 use db::DB;
 use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::route::{create, status, upload_ent};
+use crate::route::{create, status, upload_ent, upload_exe};
 
 mod common;
 mod db;
@@ -47,6 +47,7 @@ async fn main() -> Result<()> {
         .route("/project/create", post(create))
         .route("/project/:id/upload_ent", post(upload_ent))
         .route("/project/:id/status", get(status))
+        .route("/project/:id/upload_exe", post(upload_exe))
         .with_state(shared_state)
         .layer(TraceLayer::new_for_http())
         .layer(
@@ -87,7 +88,7 @@ impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            Json(AppRes::fail(format!("Something went wrong: {}", self.0))),
+            AppRes::fail(format!("Something went wrong: {}", self.0)),
         )
             .into_response()
     }
