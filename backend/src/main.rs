@@ -8,18 +8,20 @@ use axum::{
     Json, Router,
 };
 use common::AppRes;
+use db::DB;
 use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::route::{create, status, upload_ent};
 
 mod common;
+mod db;
 mod file;
 mod project;
 mod route;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     dotenv::dotenv().ok();
 
     tracing_subscriber::registry()
@@ -30,9 +32,7 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let db = edgedb_tokio::create_client()
-        .await
-        .expect("cannot connect to db");
+    let db = DB::new().await?;
 
     let s3 = {
         let endpoint = env::var("AWS_ENDPOINT").expect("env AWS_ENDPOINT not fount");
@@ -69,15 +69,17 @@ async fn main() {
     tracing::debug!("listening on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
-        .await
-        .unwrap();
+        .await?;
+
+    Ok(())
 }
 
 struct AppState {
-    db: edgedb_tokio::Client,
+    db: DB,
     s3: aws_sdk_s3::Client,
 }
 
+#[derive(Debug)]
 struct AppError(anyhow::Error);
 type Result<T> = std::result::Result<T, AppError>;
 

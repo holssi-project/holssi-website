@@ -30,6 +30,7 @@ impl From<ProjectQuery> for Project {
 #[derive(Serialize, Queryable)]
 pub(crate) enum ProjectStatus {
     Created,
+    Uploaded,
     Building,
     Finished,
 }

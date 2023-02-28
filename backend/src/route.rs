@@ -10,16 +10,13 @@ use uuid::Uuid;
 
 use crate::{
     common::{AppRes, ObjectId},
-    file::{File, FileQuery},
-    project::{Project, ProjectQuery},
+    file::File,
+    project::{Project},
     AppState, Result,
 };
 
 pub(crate) async fn create(State(state): State<Arc<AppState>>) -> Result<Json<AppRes<ObjectId>>> {
-    let result = state
-        .db
-        .query_required_single::<ObjectId, _>("insert Project;", &())
-        .await?;
+    let result = state.db.insert_project().await?;
     Ok(Json(AppRes::success(result)))
 }
 
@@ -31,34 +28,11 @@ pub(crate) async fn upload_ent(
     if let Some(field) = multipart.next_field().await? {
         match (field.name(), field.file_name()) {
             (Some("file"), Some(file_name)) => {
-                let file: File = state
-                    .db
-                    .query_required_single::<FileQuery, _>(
-                        r#"
-                        select (insert File {
-                            name := <str>$0
-                        }) { id, created, name };
-                        "#,
-                        &(file_name,),
-                    )
-                    .await?
-                    .into();
+                let file: File = File::new(&state.db, file_name).await?;
 
                 file.upload(&state.s3, field.bytes().await?.into()).await?;
 
-                let _ = state
-                    .db
-                    .query_required_single::<ObjectId, _>(
-                        r#"
-                        update Project
-                        filter .id = <uuid>$0
-                        set {
-                        entry_file := (select File filter .id = <uuid>$1)
-                        }
-                        "#,
-                        &(id, file.id()),
-                    )
-                    .await?;
+                let _ = state.db.update_project_ent_file(&id, &file.id()).await?;
 
                 Ok(Json(AppRes::success(())).into_response())
             }
@@ -73,12 +47,6 @@ pub(crate) async fn status(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<AppRes<Project>>> {
-    let result = state
-        .db
-        .query_required_single::<ProjectQuery, _>(
-            "select Project { id, created, status } filter .id = <uuid>$0;",
-            &(id,),
-        )
-        .await?;
+    let result = state.db.select_project(&id).await?;
     Ok(Json(AppRes::success(result.into())))
 }

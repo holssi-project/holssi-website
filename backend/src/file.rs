@@ -5,6 +5,8 @@ use edgedb_protocol::model::Datetime;
 use serde::Serialize;
 use uuid::Uuid;
 
+use crate::db::DB;
+
 #[derive(Serialize)]
 pub(crate) struct File {
     id: Uuid,
@@ -16,13 +18,17 @@ impl File {
         format!("{}/{}", self.id, self.name)
     }
 
+    pub(crate) async fn new(db: &DB, file_name: &str) -> crate::Result<Self> {
+        let file = db.insert_file(file_name).await?.into();
+        Ok(file)
+    }
+
     pub(crate) async fn upload(
         &self,
         s3: &aws_sdk_s3::Client,
         body: ByteStream,
     ) -> crate::Result<()> {
         s3.put_object()
-            .bucket("holssi")
             .key(self.key())
             .body(body)
             .send()
