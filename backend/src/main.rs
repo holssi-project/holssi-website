@@ -12,7 +12,7 @@ use db::DB;
 use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::route::{create, status, upload_ent, upload_exe};
+use crate::route::{create, status, upload_ent, upload_exe, build_failed};
 
 mod common;
 mod db;
@@ -48,6 +48,7 @@ async fn main() -> Result<()> {
         .route("/project/:id/upload_ent", post(upload_ent))
         .route("/project/:id/status", get(status))
         .route("/project/:id/upload_exe", post(upload_exe))
+        .route("/project/:id/failed", post(build_failed))
         .with_state(shared_state)
         .layer(TraceLayer::new_for_http())
         .layer(

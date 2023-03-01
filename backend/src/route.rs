@@ -75,7 +75,7 @@ pub(crate) async fn upload_exe(
             (Some("file"), Some(file_name)) => {
                 let project = state.db.select_project(&id).await?;
 
-                if *project.status() == ProjectStatus::Uploaded
+                if *project.status() == ProjectStatus::Building
                     && project.exe_nonce() == Some(&test_nonce)
                 {
                     let file: File = File::new(&state.db, file_name).await?;
@@ -93,5 +93,23 @@ pub(crate) async fn upload_exe(
         }
     } else {
         Ok((StatusCode::BAD_REQUEST, "Bad Request").into_response())
+    }
+}
+
+pub(crate) async fn build_failed(
+    State(state): State<Arc<AppState>>,
+    Query(ExeNonce { nonce: test_nonce }): Query<ExeNonce>,
+    Path(id): Path<Uuid>,
+) -> Result<Response> {
+    let project = state.db.select_project(&id).await?;
+
+    if *project.status() == ProjectStatus::Building && project.exe_nonce() == Some(&test_nonce) {
+        state
+            .db
+            .update_project_status(&id, &ProjectStatus::Failed)
+            .await?;
+        Ok(AppRes::success(()).into_response())
+    } else {
+        Ok((StatusCode::BAD_REQUEST, AppRes::fail("Bad Request")).into_response())
     }
 }

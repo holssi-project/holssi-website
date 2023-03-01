@@ -4,7 +4,7 @@ use uuid::Uuid;
 use crate::{
     common::ObjectId,
     file::FileQuery,
-    project::{ProjectQuery, ProjectSimple},
+    project::{ProjectQuery, ProjectSimple, ProjectStatus},
     Result,
 };
 
@@ -98,6 +98,26 @@ impl DB {
                 };
                 "#,
                 &(project_id, file_id),
+            )
+            .await?;
+        Ok(result)
+    }
+    pub(crate) async fn update_project_status(
+        &self,
+        project_id: &Uuid,
+        status: &ProjectStatus,
+    ) -> Result<ObjectId> {
+        let result = self
+            .0
+            .query_required_single::<ObjectId, _>(
+                r#"
+                update Project
+                filter .id = <uuid>$0
+                set {
+                status := <ProjectStatus>$1,
+                };
+                "#,
+                &(project_id, status.to_string()),
             )
             .await?;
         Ok(result)

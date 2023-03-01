@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use edgedb_derive::Queryable;
 use edgedb_protocol::model::Datetime;
 use serde::{Deserialize, Serialize};
+use strum::Display;
 use uuid::Uuid;
 
 use crate::file::FileQuery;
@@ -48,7 +49,7 @@ impl From<ProjectQuery> for ProjectSimple {
     }
 }
 
-#[derive(Serialize, Queryable, PartialEq, Eq)]
+#[derive(Serialize, Queryable, PartialEq, Eq, Display)]
 pub(crate) enum ProjectStatus {
     Created,
     Uploaded,
