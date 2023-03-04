@@ -1,0 +1,269 @@
+{
+  "db": "PostgreSQL",
+  "2bbc80ded5395fe26ef4484e4f6fddfb85c6f15deeb744feaa539d594958e128": {
+    "describe": {
+      "columns": [
+        {
+          "name": "project_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "status: _",
+          "ordinal": 1,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "created",
+                  "uploaded",
+                  "building",
+                  "success",
+                  "failed"
+                ]
+              },
+              "name": "project_status"
+            }
+          }
+        },
+        {
+          "name": "created",
+          "ordinal": 2,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "created",
+                  "uploaded",
+                  "building",
+                  "success",
+                  "failed"
+                ]
+              },
+              "name": "project_status"
+            }
+          },
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            UPDATE projects\n            SET status = $1\n            WHERE project_id = $2\n            RETURNING project_id, status AS \"status: _\", created;\n            "
+  },
+  "4509ec64beef8abdbcadf3bfd73c46ee04f4ec538adfc63d49779fcaeacc2d9a": {
+    "describe": {
+      "columns": [
+        {
+          "name": "build_nonce",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "status: _",
+          "ordinal": 1,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "created",
+                  "uploaded",
+                  "building",
+                  "success",
+                  "failed"
+                ]
+              },
+              "name": "project_status"
+            }
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "SELECT build_nonce, status AS \"status: _\" FROM projects WHERE project_id = $1;"
+  },
+  "8b6782c777c8708c9d23bddd8ecb9fab6573192bdfd3c65144466ff11a546a03": {
+    "describe": {
+      "columns": [
+        {
+          "name": "project_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "created",
+          "ordinal": 1,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "status: _",
+          "ordinal": 2,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "created",
+                  "uploaded",
+                  "building",
+                  "success",
+                  "failed"
+                ]
+              },
+              "name": "project_status"
+            }
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar"
+        ]
+      }
+    },
+    "query": "INSERT INTO projects (build_nonce) VALUES ($1) RETURNING project_id, created, status AS \"status: _\";"
+  },
+  "b1d35f78376ed3bf92a92397914dd8a8a92e506b8b71477b981cdfe7ae1b503c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "executable_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "project_id",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "created",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text"
+        ]
+      }
+    },
+    "query": "INSERT INTO executables (project_id, name) VALUES ($1, $2) RETURNING *;"
+  },
+  "bc5b0a086c6f3ef8375e5fdc5c2a68dcfe5d5f4c6286b7b30ae0207180b85051": {
+    "describe": {
+      "columns": [
+        {
+          "name": "entry_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "project_id",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "created",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text"
+        ]
+      }
+    },
+    "query": "INSERT INTO entrys (project_id, name) VALUES ($1, $2) RETURNING *;"
+  },
+  "ce17dd09b831f4942baa61774367aeb9cb6324b88a3bf3deda838897c0f68177": {
+    "describe": {
+      "columns": [
+        {
+          "name": "project_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "created",
+          "ordinal": 1,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "status: _",
+          "ordinal": 2,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "created",
+                  "uploaded",
+                  "building",
+                  "success",
+                  "failed"
+                ]
+              },
+              "name": "project_status"
+            }
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "SELECT project_id, created, status AS \"status: _\" FROM projects WHERE project_id = $1;"
+  }
+}

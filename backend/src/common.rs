@@ -1,12 +1,6 @@
 use axum::Json;
-use edgedb_derive::Queryable;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+use serde::Serialize;
 
-#[derive(Serialize, Deserialize, Queryable)]
-pub(crate) struct ObjectId {
-    pub(crate) id: Uuid,
-}
 
 #[derive(Serialize)]
 pub(crate) struct AppRes<T> {

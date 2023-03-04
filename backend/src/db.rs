@@ -1,140 +1,97 @@
-use anyhow::Context;
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use uuid::Uuid;
 
 use crate::{
-    common::ObjectId,
-    file::FileQuery,
-    project::{ProjectQuery, ProjectSimple, ProjectStatus},
+    file::{Entry, Executable},
+    nonce::Nonce,
+    project::{ProjectBuild, ProjectSimple, ProjectStatus},
     Result,
 };
 
-pub(crate) struct DB(edgedb_tokio::Client);
+pub(crate) struct Database(Pool<Postgres>);
 
-impl DB {
-    pub(crate) async fn new() -> Result<DB> {
-        let db = edgedb_tokio::create_client()
-            .await
-            .context("cannot connect to db")?;
-        Ok(DB(db))
+impl Database {
+    pub(crate) async fn new(url: &str) -> Result<Database> {
+        let pool = PgPoolOptions::new().max_connections(5).connect(url).await?;
+
+        sqlx::migrate!().run(&pool).await?;
+
+        Ok(Database(pool))
     }
 
-    pub(crate) async fn insert_project(&self) -> Result<ObjectId> {
-        let result = self
-            .0
-            .query_required_single::<ObjectId, _>("insert Project;", &())
-            .await?;
+    pub(crate) async fn insert_project(&self) -> Result<ProjectSimple> {
+        let nonce = Nonce::new();
+        let result = sqlx::query_as!(
+            ProjectSimple,
+            r#"INSERT INTO projects (build_nonce) VALUES ($1) RETURNING project_id, created, status AS "status: _";"#,
+            nonce.get(),
+        )
+        .fetch_one(&self.0)
+        .await?;
         Ok(result)
     }
     pub(crate) async fn select_project_simple(&self, id: &Uuid) -> Result<ProjectSimple> {
-        let result = self
-            .0
-            .query_required_single::<ProjectQuery, _>(
-                r#"
-                select Project {
-                  id, created, status,
-                  entry_file: { id, created, name },
-                  executable: { id, created, name },
-                  exe_nonce
-                } filter .id = <uuid>$0;
-                "#,
-                &(id,),
-            )
-            .await?
-            .into();
+        let result = sqlx::query_as!(
+            ProjectSimple,
+            r#"SELECT project_id, created, status AS "status: _" FROM projects WHERE project_id = $1;"#,
+            id,
+        ).fetch_one(&self.0).await?;
         Ok(result)
     }
-    pub(crate) async fn select_project(&self, id: &Uuid) -> Result<ProjectQuery> {
-        let result = self
-            .0
-            .query_required_single::<ProjectQuery, _>(
-                r#"
-                select Project {
-                  id, created, status,
-                  entry_file: { id, created, name },
-                  executable: { id, created, name },
-                  exe_nonce
-                } filter .id = <uuid>$0;
-                "#,
-                &(id,),
-            )
-            .await?;
+    pub(crate) async fn select_project_build(&self, id: &Uuid) -> Result<ProjectBuild> {
+        let result = sqlx::query_as!(
+            ProjectBuild,
+            r#"SELECT build_nonce, status AS "status: _" FROM projects WHERE project_id = $1;"#,
+            id,
+        )
+        .fetch_one(&self.0)
+        .await?;
         Ok(result)
     }
-    pub(crate) async fn add_ent_file_to_project(
+    pub(crate) async fn create_ent_file(&self, project_id: &Uuid, name: &str) -> Result<Entry> {
+        let result = sqlx::query_as!(
+            Entry,
+            r#"INSERT INTO entrys (project_id, name) VALUES ($1, $2) RETURNING *;"#,
+            project_id,
+            name
+        )
+        .fetch_one(&self.0)
+        .await?;
+        Ok(result)
+    }
+    pub(crate) async fn create_exe_file(
         &self,
         project_id: &Uuid,
-        file_id: &Uuid,
-    ) -> Result<ObjectId> {
-        let result = self
-            .0
-            .query_required_single::<ObjectId, _>(
-                r#"
-                update Project
-                filter .id = <uuid>$0
-                set {
-                entry_file := (select File filter .id = <uuid>$1),
-                status := ProjectStatus.Uploaded,
-                };
-                "#,
-                &(project_id, file_id),
-            )
-            .await?;
-        Ok(result)
-    }
-    pub(crate) async fn add_exe_file_to_project(
-        &self,
-        project_id: &Uuid,
-        file_id: &Uuid,
-    ) -> Result<ObjectId> {
-        let result = self
-            .0
-            .query_required_single::<ObjectId, _>(
-                r#"
-                update Project
-                filter .id = <uuid>$0
-                set {
-                executable := (select File filter .id = <uuid>$1),
-                status := ProjectStatus.Success,
-                };
-                "#,
-                &(project_id, file_id),
-            )
-            .await?;
+        name: &str,
+    ) -> Result<Executable> {
+        let result = sqlx::query_as!(
+            Executable,
+            r#"INSERT INTO executables (project_id, name) VALUES ($1, $2) RETURNING *;"#,
+            project_id,
+            name
+        )
+        .fetch_one(&self.0)
+        .await?;
         Ok(result)
     }
     pub(crate) async fn update_project_status(
         &self,
         project_id: &Uuid,
         status: &ProjectStatus,
-    ) -> Result<ObjectId> {
-        let result = self
-            .0
-            .query_required_single::<ObjectId, _>(
-                r#"
-                update Project
-                filter .id = <uuid>$0
-                set {
-                status := <ProjectStatus>$1,
-                };
-                "#,
-                &(project_id, status.to_string()),
-            )
-            .await?;
+    ) -> Result<ProjectSimple> {
+        let result = sqlx::query_as!(
+            ProjectSimple,
+            r#"
+            UPDATE projects
+            SET status = $1
+            WHERE project_id = $2
+            RETURNING project_id, status AS "status: _", created;
+            "#,
+            status as _,
+            project_id,
+        )
+        .fetch_one(&self.0)
+        .await?;
         Ok(result)
-    }
-
-    pub(crate) async fn insert_file(&self, name: &str) -> Result<FileQuery> {
-        let file = self
-            .0
-            .query_required_single::<FileQuery, _>(
-                r#"
-                select (insert File {
-                    name := <str>$0
-                }) { id, created, name };
-                "#,
-                &(name,),
-            )
-            .await?;
-        Ok(file)
     }
 }

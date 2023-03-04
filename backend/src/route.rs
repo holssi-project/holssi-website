@@ -9,13 +9,16 @@ use axum::{
 use uuid::Uuid;
 
 use crate::{
-    common::{AppRes, ObjectId},
+    common::AppRes,
     file::File,
-    project::{ExeNonce, ProjectSimple, ProjectStatus},
+    nonce::Nonce,
+    project::{ProjectSimple, ProjectStatus},
     AppState, Result,
 };
 
-pub(crate) async fn create(State(state): State<Arc<AppState>>) -> Result<Json<AppRes<ObjectId>>> {
+pub(crate) async fn create(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<AppRes<ProjectSimple>>> {
     let result = state.db.insert_project().await?;
     Ok(AppRes::success(result))
 }
@@ -41,13 +44,17 @@ pub(crate) async fn upload_ent(
                     );
                 }
 
-                let file: File = File::new(&state.db, file_name).await?;
+                let entry = state.db.create_ent_file(&id, file_name).await?;
+                let file = File::Entry(entry);
 
                 file.upload(&state.s3, field.bytes().await?.into()).await?;
 
-                let _ = state.db.add_ent_file_to_project(&id, &file.id()).await?;
+                let project = state
+                    .db
+                    .update_project_status(&id, &ProjectStatus::Uploaded)
+                    .await?;
 
-                Ok(AppRes::success(()).into_response())
+                Ok(AppRes::success(project).into_response())
             }
             _ => Ok((StatusCode::BAD_REQUEST, AppRes::fail("no file")).into_response()),
         }
@@ -66,23 +73,25 @@ pub(crate) async fn status(
 
 pub(crate) async fn upload_exe(
     State(state): State<Arc<AppState>>,
-    Query(ExeNonce { nonce: test_nonce }): Query<ExeNonce>,
+    Query(Nonce { nonce: test_nonce }): Query<Nonce>,
     Path(id): Path<Uuid>,
     mut multipart: Multipart,
 ) -> Result<Response> {
     if let Some(field) = multipart.next_field().await? {
         match (field.name(), field.file_name()) {
             (Some("file"), Some(file_name)) => {
-                let project = state.db.select_project(&id).await?;
+                let project = state.db.select_project_build(&id).await?;
 
-                if *project.status() == ProjectStatus::Building
-                    && project.exe_nonce() == Some(&test_nonce)
-                {
-                    let file: File = File::new(&state.db, file_name).await?;
+                if project.status == ProjectStatus::Building && project.build_nonce == test_nonce {
+                    let executable = state.db.create_exe_file(&id, file_name).await?;
+                    let file = File::Executable(executable);
 
                     file.upload(&state.s3, field.bytes().await?.into()).await?;
 
-                    let _ = state.db.add_exe_file_to_project(&id, &file.id()).await?;
+                    let _ = state
+                        .db
+                        .update_project_status(&id, &ProjectStatus::Success)
+                        .await?;
 
                     Ok(AppRes::success(()).into_response())
                 } else {
@@ -98,12 +107,12 @@ pub(crate) async fn upload_exe(
 
 pub(crate) async fn build_failed(
     State(state): State<Arc<AppState>>,
-    Query(ExeNonce { nonce: test_nonce }): Query<ExeNonce>,
+    Query(Nonce { nonce: test_nonce }): Query<Nonce>,
     Path(id): Path<Uuid>,
 ) -> Result<Response> {
-    let project = state.db.select_project(&id).await?;
+    let project = state.db.select_project_build(&id).await?;
 
-    if *project.status() == ProjectStatus::Building && project.exe_nonce() == Some(&test_nonce) {
+    if project.status == ProjectStatus::Building && project.build_nonce == test_nonce {
         state
             .db
             .update_project_status(&id, &ProjectStatus::Failed)

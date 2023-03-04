@@ -1,26 +1,21 @@
 use aws_sdk_s3::types::ByteStream;
 use chrono::{DateTime, Utc};
-use edgedb_derive::Queryable;
-use edgedb_protocol::model::Datetime;
-use serde::Serialize;
 use uuid::Uuid;
 
-use crate::db::DB;
-
-#[derive(Serialize)]
-pub(crate) struct File {
-    id: Uuid,
-    created: DateTime<Utc>,
-    name: String,
+pub(crate) enum File {
+    Entry(Entry),
+    Executable(Executable),
 }
 impl File {
     pub(crate) fn key(&self) -> String {
-        format!("{}/{}", self.id, self.name)
-    }
-
-    pub(crate) async fn new(db: &DB, file_name: &str) -> crate::Result<Self> {
-        let file = db.insert_file(file_name).await?.into();
-        Ok(file)
+        match self {
+            File::Entry(file) => {
+                format!("{}/{}", file.entry_id, file.name)
+            }
+            File::Executable(file) => {
+                format!("{}/{}", file.executable_id, file.name)
+            }
+        }
     }
 
     pub(crate) async fn upload(
@@ -32,24 +27,17 @@ impl File {
 
         Ok(())
     }
-
-    pub(crate) fn id(&self) -> Uuid {
-        self.id
-    }
-}
-impl From<FileQuery> for File {
-    fn from(value: FileQuery) -> Self {
-        Self {
-            id: value.id,
-            created: value.created.into(),
-            name: value.name,
-        }
-    }
 }
 
-#[derive(Queryable)]
-pub(crate) struct FileQuery {
-    id: Uuid,
-    created: Datetime,
-    name: String,
+pub(crate) struct Entry {
+    pub(crate) entry_id: Uuid,
+    pub(crate) project_id: Uuid,
+    pub(crate) name: String,
+    pub(crate) created: DateTime<Utc>,
+}
+pub(crate) struct Executable {
+    pub(crate) executable_id: Uuid,
+    pub(crate) project_id: Uuid,
+    pub(crate) name: String,
+    pub(crate) created: DateTime<Utc>,
 }

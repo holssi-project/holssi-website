@@ -8,15 +8,16 @@ use axum::{
     Router,
 };
 use common::AppRes;
-use db::DB;
+use db::Database;
 use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::route::{create, status, upload_ent, upload_exe, build_failed};
+use crate::route::{build_failed, create, status, upload_ent, upload_exe};
 
 mod common;
 mod db;
 mod file;
+mod nonce;
 mod project;
 mod route;
 
@@ -32,7 +33,9 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let db = DB::new().await?;
+    let database_url = env::var("DATABASE_URL").expect("env DATABASE_URL missing");
+
+    let db = Database::new(&database_url).await?;
 
     let s3 = {
         let endpoint = env::var("AWS_ENDPOINT").expect("env AWS_ENDPOINT not fount");
@@ -77,7 +80,7 @@ async fn main() -> Result<()> {
 }
 
 struct AppState {
-    db: DB,
+    db: Database,
     s3: aws_sdk_s3::Client,
 }
 
