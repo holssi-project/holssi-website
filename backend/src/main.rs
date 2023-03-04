@@ -1,4 +1,4 @@
-use std::{env, net::SocketAddr, sync::Arc};
+use std::{env, net::{SocketAddr, Ipv6Addr}, sync::Arc};
 
 use axum::{
     extract::DefaultBodyLimit,
@@ -70,7 +70,7 @@ async fn main() -> Result<()> {
             200 * 1024 * 1024, /* 200mb */
         ));
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 9000));
+    let addr = SocketAddr::new(Ipv6Addr::UNSPECIFIED.into(), 9000);
     tracing::debug!("listening on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
