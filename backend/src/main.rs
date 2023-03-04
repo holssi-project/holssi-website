@@ -1,7 +1,10 @@
-use std::{env, net::{SocketAddr, Ipv6Addr}, sync::Arc};
+use std::{
+    env,
+    net::{Ipv6Addr, SocketAddr},
+    sync::Arc,
+};
 
 use axum::{
-    extract::DefaultBodyLimit,
     http::{header, HeaderValue, Method, StatusCode},
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -9,16 +12,16 @@ use axum::{
 };
 use common::AppRes;
 use db::Database;
-use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer, trace::TraceLayer};
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::route::{build_failed, create, status, upload_ent, upload_exe};
+use crate::route::{build_failed, build_success, create, exe_presigned, status, upload_ent};
 
 mod common;
 mod db;
 mod file;
-mod nonce;
 mod project;
+mod query;
 mod route;
 
 #[tokio::main]
@@ -50,7 +53,8 @@ async fn main() -> Result<()> {
         .route("/project/create", post(create))
         .route("/project/:id/upload_ent", post(upload_ent))
         .route("/project/:id/status", get(status))
-        .route("/project/:id/upload_exe", post(upload_exe))
+        .route("/project/:id/exe_signed", get(exe_presigned))
+        .route("/project/:id/success", post(build_success))
         .route("/project/:id/failed", post(build_failed))
         .with_state(shared_state)
         .layer(TraceLayer::new_for_http())
@@ -64,11 +68,7 @@ async fn main() -> Result<()> {
                 )
                 .allow_methods([Method::GET, Method::POST])
                 .allow_headers([header::CONTENT_TYPE]),
-        )
-        .layer(DefaultBodyLimit::disable())
-        .layer(RequestBodyLimitLayer::new(
-            200 * 1024 * 1024, /* 200mb */
-        ));
+        );
 
     let addr = SocketAddr::new(Ipv6Addr::UNSPECIFIED.into(), 9000);
     tracing::debug!("listening on {}", addr);

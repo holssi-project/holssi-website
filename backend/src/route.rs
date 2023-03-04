@@ -11,8 +11,8 @@ use uuid::Uuid;
 use crate::{
     common::AppRes,
     file::File,
-    nonce::Nonce,
     project::{ProjectSimple, ProjectStatus},
+    query::{ExePresignedQuery, NonceQuery},
     AppState, Result,
 };
 
@@ -71,48 +71,52 @@ pub(crate) async fn status(
     Ok(AppRes::success(result))
 }
 
-pub(crate) async fn upload_exe(
+pub(crate) async fn exe_presigned(
     State(state): State<Arc<AppState>>,
-    Query(Nonce { nonce: test_nonce }): Query<Nonce>,
+    Query(query): Query<ExePresignedQuery>,
     Path(id): Path<Uuid>,
-    mut multipart: Multipart,
 ) -> Result<Response> {
-    if let Some(field) = multipart.next_field().await? {
-        match (field.name(), field.file_name()) {
-            (Some("file"), Some(file_name)) => {
-                let project = state.db.select_project_build(&id).await?;
+    let project = state.db.select_project_build(&id).await?;
 
-                if project.status == ProjectStatus::Building && project.build_nonce == test_nonce {
-                    let executable = state.db.create_exe_file(&id, file_name).await?;
-                    let file = File::Executable(executable);
+    if project.status == ProjectStatus::Building && project.build_nonce == query.nonce {
+        let executable = state.db.create_exe_file(&id, &query.file_name).await?;
+        let file = File::Executable(executable);
 
-                    file.upload(&state.s3, field.bytes().await?.into()).await?;
+        let presigned = file.get_presigned(&state.s3).await?;
 
-                    let _ = state
-                        .db
-                        .update_project_status(&id, &ProjectStatus::Success)
-                        .await?;
-
-                    Ok(AppRes::success(()).into_response())
-                } else {
-                    Ok((StatusCode::BAD_REQUEST, AppRes::fail("Bad Request")).into_response())
-                }
-            }
-            _ => Ok((StatusCode::BAD_REQUEST, AppRes::fail("no file")).into_response()),
-        }
+        Ok(presigned.into_response())
     } else {
-        Ok((StatusCode::BAD_REQUEST, "Bad Request").into_response())
+        Ok((StatusCode::BAD_REQUEST, AppRes::fail("Bad Request")).into_response())
     }
 }
 
-pub(crate) async fn build_failed(
+pub(crate) async fn build_success(
     State(state): State<Arc<AppState>>,
-    Query(Nonce { nonce: test_nonce }): Query<Nonce>,
+    Query(NonceQuery { nonce: test_nonce }): Query<NonceQuery>,
     Path(id): Path<Uuid>,
 ) -> Result<Response> {
     let project = state.db.select_project_build(&id).await?;
 
     if project.status == ProjectStatus::Building && project.build_nonce == test_nonce {
+        state
+            .db
+            .update_project_status(&id, &ProjectStatus::Success)
+            .await?;
+        Ok(AppRes::success(()).into_response())
+    } else {
+        Ok((StatusCode::BAD_REQUEST, AppRes::fail("Bad Request")).into_response())
+    }
+}
+pub(crate) async fn build_failed(
+    State(state): State<Arc<AppState>>,
+    Query(NonceQuery { nonce: test_nonce }): Query<NonceQuery>,
+    Path(id): Path<Uuid>,
+    body: String,
+) -> Result<Response> {
+    let project = state.db.select_project_build(&id).await?;
+
+    if project.status == ProjectStatus::Building && project.build_nonce == test_nonce {
+        tracing::error!("building failed (project_id = {}, reason = {})", id, body);
         state
             .db
             .update_project_status(&id, &ProjectStatus::Failed)

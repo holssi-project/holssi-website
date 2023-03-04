@@ -1,4 +1,6 @@
-use aws_sdk_s3::types::ByteStream;
+use std::time::Duration;
+
+use aws_sdk_s3::{presigning::config::PresigningConfig, types::ByteStream};
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
@@ -26,6 +28,16 @@ impl File {
         s3.put_object().key(self.key()).body(body).send().await?;
 
         Ok(())
+    }
+
+    pub(crate) async fn get_presigned(&self, s3: &aws_sdk_s3::Client) -> crate::Result<String> {
+        let presigned = s3
+            .put_object()
+            .key(self.key())
+            .presigned(PresigningConfig::expires_in(Duration::from_secs(5 * 60))?)
+            .await?;
+
+        Ok(presigned.uri().to_string())
     }
 }
 

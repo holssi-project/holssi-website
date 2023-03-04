@@ -2,8 +2,8 @@ use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use uuid::Uuid;
 
 use crate::{
+    common::gen_random_str,
     file::{Entry, Executable},
-    nonce::Nonce,
     project::{ProjectBuild, ProjectSimple, ProjectStatus},
     Result,
 };
@@ -20,11 +20,11 @@ impl Database {
     }
 
     pub(crate) async fn insert_project(&self) -> Result<ProjectSimple> {
-        let nonce = Nonce::new();
+        let nonce = gen_random_str();
         let result = sqlx::query_as!(
             ProjectSimple,
             r#"INSERT INTO projects (build_nonce) VALUES ($1) RETURNING project_id, created, status AS "status: _";"#,
-            nonce.get(),
+            nonce,
         )
         .fetch_one(&self.0)
         .await?;

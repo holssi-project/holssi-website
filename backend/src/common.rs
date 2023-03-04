@@ -1,6 +1,6 @@
 use axum::Json;
+use rand::{distributions::Alphanumeric, Rng};
 use serde::Serialize;
-
 
 #[derive(Serialize)]
 pub(crate) struct AppRes<T> {
@@ -20,4 +20,12 @@ impl<T> AppRes<T> {
             data,
         })
     }
+}
+
+pub(crate) fn gen_random_str() -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(10)
+        .map(char::from)
+        .collect()
 }
