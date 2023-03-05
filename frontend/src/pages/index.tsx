@@ -33,6 +33,10 @@ export default function Home() {
         <Nav />
         <Button title='새로 만들기' onClick={handleStartBtnClick} disabled={isLoading} />
         <ErrorMsg error={error} />
+        <div>
+          <span className="text-red-400">*</span>현재 베타 테스트 중입니다.
+          혹시 오류가 발생한다면 <a className="text-blue-600" href="https://github.com/jedeop/holssi-website/issues">이곳</a>에 이슈를 생성해주세요.
+        </div>
       </main>
     </>
   )
