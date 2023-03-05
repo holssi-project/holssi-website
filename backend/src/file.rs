@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use aws_sdk_s3::presigning::config::PresigningConfig;
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use uuid::Uuid;
 
 pub(crate) enum File {
@@ -15,6 +16,18 @@ impl File {
             }
             File::Executable(file) => {
                 format!("{}/{}", file.executable_id, file.name)
+            }
+        }
+    }
+    pub(crate) fn key_url(&self) -> String {
+        match self {
+            File::Entry(file) => {
+                let name = utf8_percent_encode(&file.name, NON_ALPHANUMERIC).to_string();
+                format!("{}/{}", file.entry_id, name)
+            }
+            File::Executable(file) => {
+                let name = utf8_percent_encode(&file.name, NON_ALPHANUMERIC).to_string();
+                format!("{}/{}", file.executable_id, name)
             }
         }
     }

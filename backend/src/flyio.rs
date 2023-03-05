@@ -1,6 +1,5 @@
 use std::{env, sync::Arc};
 
-use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use reqwest::StatusCode;
 use serde_json::json;
 
@@ -29,8 +28,7 @@ impl FlyIO {
 
         let mut cmd = info.to_cmd();
 
-        let file_url = format!("{}/{}", self.0.s3_base_url, file.key());
-        let file_url_enc = utf8_percent_encode(&file_url, NON_ALPHANUMERIC).to_string();
+        let file_url = format!("{}/{}", self.0.s3_base_url, file.key_url());
 
         cmd.extend_from_slice(&[
             "--api-hostname",
@@ -39,7 +37,7 @@ impl FlyIO {
             project_id,
             "--nonce",
             nonce,
-            &file_url_enc,
+            &file_url,
         ]);
 
         let res = client
@@ -75,6 +73,10 @@ impl FlyIO {
                 res.text().await?
             )))
         }
+    }
+
+    pub(crate) fn s3_base_url(&self) -> &str {
+        self.0.s3_base_url.as_ref()
     }
 }
 

@@ -105,4 +105,14 @@ impl Database {
         .await?;
         Ok(result)
     }
+    pub(crate) async fn select_executable_file(&self, project_id: &Uuid) -> Result<Executable> {
+        let result = sqlx::query_as!(
+            Executable,
+            r#"SELECT executable_id, name FROM executables WHERE project_id = $1;"#,
+            project_id,
+        )
+        .fetch_one(&self.0)
+        .await?;
+        Ok(result)
+    }
 }

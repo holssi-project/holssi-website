@@ -5,7 +5,7 @@ use std::{
 
 use axum::{
     extract::DefaultBodyLimit,
-    http::{header, HeaderValue, Method, StatusCode},
+    http::{header, Method, StatusCode},
     response::{IntoResponse, Response},
     routing::{get, post},
     Router,
@@ -17,7 +17,8 @@ use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer, trace::TraceLaye
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::route::{
-    build, build_failed, build_success, create, ent_presigned, exe_presigned, status,
+    build, build_failed, build_success, create, ent_presigned, exe_presigned, executable_download,
+    status,
 };
 
 mod common;
@@ -68,16 +69,18 @@ async fn main() -> Result<()> {
         .route("/project/:id/success", post(build_success))
         .route("/project/:id/failed", post(build_failed))
         .route("/project/:id/build", post(build))
+        .route("/project/:id/executable_download", get(executable_download))
         .with_state(shared_state)
         .layer(TraceLayer::new_for_http())
         .layer(
             CorsLayer::new()
-                .allow_origin(
+                .allow_origin([
                     env::var("FRONTEND_ORIGIN")
                         .expect("env FRONTEND_ORIGIN missing")
-                        .parse::<HeaderValue>()
+                        .parse()
                         .unwrap(),
-                )
+                    "http://localhost:3000".parse().unwrap(),
+                ])
                 .allow_methods([Method::GET, Method::POST])
                 .allow_headers([header::CONTENT_TYPE]),
         )

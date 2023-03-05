@@ -140,3 +140,19 @@ pub(crate) async fn build(
         Ok((StatusCode::BAD_REQUEST, AppRes::fail("Bad Request")).into_response())
     }
 }
+
+pub(crate) async fn executable_download(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<Response> {
+    let project = state.db.select_project_build(&id).await?;
+
+    if project.status == ProjectStatus::Success {
+        let exe = state.db.select_executable_file(&id).await?;
+        let file = File::Executable(exe);
+        let url = format!("{}/{}", state.fly_io.s3_base_url(), file.key_url());
+        Ok(AppRes::success(url).into_response())
+    } else {
+        Ok((StatusCode::BAD_REQUEST, AppRes::fail("Bad Request")).into_response())
+    }
+}

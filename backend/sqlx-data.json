@@ -59,6 +59,32 @@
     },
     "query": "\n            UPDATE projects\n            SET status = $1\n            WHERE project_id = $2\n            RETURNING project_id, status AS \"status: _\", created;\n            "
   },
+  "30a5a6f4624efcef42167e080c988f040e073c177c6a34e6c77ae986301f287b": {
+    "describe": {
+      "columns": [
+        {
+          "name": "executable_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "SELECT executable_id, name FROM executables WHERE project_id = $1;"
+  },
   "4509ec64beef8abdbcadf3bfd73c46ee04f4ec538adfc63d49779fcaeacc2d9a": {
     "describe": {
       "columns": [
