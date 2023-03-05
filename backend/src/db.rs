@@ -8,6 +8,7 @@ use crate::{
     Result,
 };
 
+#[derive(Clone)]
 pub(crate) struct Database(Pool<Postgres>);
 
 impl Database {
@@ -51,7 +52,7 @@ impl Database {
     pub(crate) async fn create_ent_file(&self, project_id: &Uuid, name: &str) -> Result<Entry> {
         let result = sqlx::query_as!(
             Entry,
-            r#"INSERT INTO entrys (project_id, name) VALUES ($1, $2) RETURNING *;"#,
+            r#"INSERT INTO entrys (project_id, name) VALUES ($1, $2) RETURNING entry_id, name;"#,
             project_id,
             name
         )
@@ -66,7 +67,7 @@ impl Database {
     ) -> Result<Executable> {
         let result = sqlx::query_as!(
             Executable,
-            r#"INSERT INTO executables (project_id, name) VALUES ($1, $2) RETURNING *;"#,
+            r#"INSERT INTO executables (project_id, name) VALUES ($1, $2) RETURNING executable_id, name;"#,
             project_id,
             name
         )
@@ -88,6 +89,16 @@ impl Database {
             RETURNING project_id, status AS "status: _", created;
             "#,
             status as _,
+            project_id,
+        )
+        .fetch_one(&self.0)
+        .await?;
+        Ok(result)
+    }
+    pub(crate) async fn select_entry_file(&self, project_id: &Uuid) -> Result<Entry> {
+        let result = sqlx::query_as!(
+            Entry,
+            r#"SELECT entry_id, name FROM entrys WHERE project_id = $1;"#,
             project_id,
         )
         .fetch_one(&self.0)

@@ -1,10 +1,10 @@
 use std::{
     env,
     net::{Ipv6Addr, SocketAddr},
-    sync::Arc,
 };
 
 use axum::{
+    extract::DefaultBodyLimit,
     http::{header, HeaderValue, Method, StatusCode},
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -12,14 +12,18 @@ use axum::{
 };
 use common::AppRes;
 use db::Database;
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use flyio::FlyIO;
+use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::route::{build_failed, build_success, create, exe_presigned, status, upload_ent};
+use crate::route::{
+    build, build_failed, build_success, create, ent_presigned, exe_presigned, status,
+};
 
 mod common;
 mod db;
 mod file;
+mod flyio;
 mod project;
 mod query;
 mod route;
@@ -37,7 +41,6 @@ async fn main() -> Result<()> {
         .init();
 
     let database_url = env::var("DATABASE_URL").expect("env DATABASE_URL missing");
-
     let db = Database::new(&database_url).await?;
 
     let s3 = {
@@ -46,16 +49,25 @@ async fn main() -> Result<()> {
         aws_sdk_s3::Client::new(&s3_config)
     };
 
-    let shared_state = Arc::new(AppState { db, s3 });
+    let reqwest_client = reqwest::Client::new();
+    let fly_io = FlyIO::new();
+
+    let shared_state = AppState {
+        db,
+        s3,
+        reqwest: reqwest_client,
+        fly_io,
+    };
 
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
         .route("/project/create", post(create))
-        .route("/project/:id/upload_ent", post(upload_ent))
+        .route("/project/:id/ent_signed", get(ent_presigned))
         .route("/project/:id/status", get(status))
         .route("/project/:id/exe_signed", get(exe_presigned))
         .route("/project/:id/success", post(build_success))
         .route("/project/:id/failed", post(build_failed))
+        .route("/project/:id/build", post(build))
         .with_state(shared_state)
         .layer(TraceLayer::new_for_http())
         .layer(
@@ -68,7 +80,9 @@ async fn main() -> Result<()> {
                 )
                 .allow_methods([Method::GET, Method::POST])
                 .allow_headers([header::CONTENT_TYPE]),
-        );
+        )
+        .layer(DefaultBodyLimit::disable())
+        .layer(RequestBodyLimitLayer::new(5 * 1024 * 1024 /* 5mb */));
 
     let addr = SocketAddr::new(Ipv6Addr::UNSPECIFIED.into(), 9000);
     tracing::debug!("listening on {}", addr);
@@ -79,9 +93,12 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+#[derive(Clone)]
 struct AppState {
     db: Database,
     s3: aws_sdk_s3::Client,
+    reqwest: reqwest::Client,
+    fly_io: FlyIO,
 }
 
 #[derive(Debug)]
@@ -90,6 +107,7 @@ type Result<T> = std::result::Result<T, AppError>;
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
+        tracing::debug!("Convert AppError to Response: {}", self.0); // TODO: unclear logic. Find better way for log error detail
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             AppRes::fail(format!("Something went wrong: {}", self.0)),

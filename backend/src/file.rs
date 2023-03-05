@@ -1,7 +1,6 @@
 use std::time::Duration;
 
-use aws_sdk_s3::{presigning::config::PresigningConfig, types::ByteStream};
-use chrono::{DateTime, Utc};
+use aws_sdk_s3::presigning::config::PresigningConfig;
 use uuid::Uuid;
 
 pub(crate) enum File {
@@ -20,15 +19,15 @@ impl File {
         }
     }
 
-    pub(crate) async fn upload(
-        &self,
-        s3: &aws_sdk_s3::Client,
-        body: ByteStream,
-    ) -> crate::Result<()> {
-        s3.put_object().key(self.key()).body(body).send().await?;
+    // pub(crate) async fn upload(
+    //     &self,
+    //     s3: &aws_sdk_s3::Client,
+    //     body: ByteStream,
+    // ) -> crate::Result<()> {
+    //     s3.put_object().key(self.key()).body(body).send().await?;
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     pub(crate) async fn get_presigned(&self, s3: &aws_sdk_s3::Client) -> crate::Result<String> {
         let presigned = s3
@@ -43,13 +42,13 @@ impl File {
 
 pub(crate) struct Entry {
     pub(crate) entry_id: Uuid,
-    pub(crate) project_id: Uuid,
+    // pub(crate) project_id: Uuid,
     pub(crate) name: String,
-    pub(crate) created: DateTime<Utc>,
+    // pub(crate) created: DateTime<Utc>,
 }
 pub(crate) struct Executable {
     pub(crate) executable_id: Uuid,
-    pub(crate) project_id: Uuid,
+    // pub(crate) project_id: Uuid,
     pub(crate) name: String,
-    pub(crate) created: DateTime<Utc>,
+    // pub(crate) created: DateTime<Utc>,
 }

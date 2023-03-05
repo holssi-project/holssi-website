@@ -98,6 +98,33 @@
     },
     "query": "SELECT build_nonce, status AS \"status: _\" FROM projects WHERE project_id = $1;"
   },
+  "53aecbc22df3dc2be0871e12df006dc141e0ed59044d0122a9b98ba09173a842": {
+    "describe": {
+      "columns": [
+        {
+          "name": "executable_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text"
+        ]
+      }
+    },
+    "query": "INSERT INTO executables (project_id, name) VALUES ($1, $2) RETURNING executable_id, name;"
+  },
   "8b6782c777c8708c9d23bddd8ecb9fab6573192bdfd3c65144466ff11a546a03": {
     "describe": {
       "columns": [
@@ -143,46 +170,7 @@
     },
     "query": "INSERT INTO projects (build_nonce) VALUES ($1) RETURNING project_id, created, status AS \"status: _\";"
   },
-  "b1d35f78376ed3bf92a92397914dd8a8a92e506b8b71477b981cdfe7ae1b503c": {
-    "describe": {
-      "columns": [
-        {
-          "name": "executable_id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "project_id",
-          "ordinal": 1,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "name",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "created",
-          "ordinal": 3,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text"
-        ]
-      }
-    },
-    "query": "INSERT INTO executables (project_id, name) VALUES ($1, $2) RETURNING *;"
-  },
-  "bc5b0a086c6f3ef8375e5fdc5c2a68dcfe5d5f4c6286b7b30ae0207180b85051": {
+  "befadb8b51e63d1571f13b09e0bee1579665d61cd349a56111999f352d749914": {
     "describe": {
       "columns": [
         {
@@ -191,24 +179,12 @@
           "type_info": "Uuid"
         },
         {
-          "name": "project_id",
-          "ordinal": 1,
-          "type_info": "Uuid"
-        },
-        {
           "name": "name",
-          "ordinal": 2,
+          "ordinal": 1,
           "type_info": "Text"
-        },
-        {
-          "name": "created",
-          "ordinal": 3,
-          "type_info": "Timestamptz"
         }
       ],
       "nullable": [
-        false,
-        false,
         false,
         false
       ],
@@ -219,7 +195,7 @@
         ]
       }
     },
-    "query": "INSERT INTO entrys (project_id, name) VALUES ($1, $2) RETURNING *;"
+    "query": "INSERT INTO entrys (project_id, name) VALUES ($1, $2) RETURNING entry_id, name;"
   },
   "ce17dd09b831f4942baa61774367aeb9cb6324b88a3bf3deda838897c0f68177": {
     "describe": {
@@ -265,5 +241,31 @@
       }
     },
     "query": "SELECT project_id, created, status AS \"status: _\" FROM projects WHERE project_id = $1;"
+  },
+  "fa55e0b75dd91152a69ed917a0771a77dad73ecc86c6489640e2551b97d0a2e4": {
+    "describe": {
+      "columns": [
+        {
+          "name": "entry_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "SELECT entry_id, name FROM entrys WHERE project_id = $1;"
   }
 }
