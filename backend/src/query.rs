@@ -24,6 +24,8 @@ pub(crate) struct BuildBody {
     pub(crate) author: String,
     pub(crate) version: Option<String>,
     pub(crate) desc: Option<String>,
+    pub(crate) platform: Option<String>,
+    pub(crate) arch: Option<String>,
 }
 
 impl BuildBody {
@@ -50,6 +52,22 @@ impl BuildBody {
             Some(desc) => {
                 cmd.push("--desc");
                 cmd.push(desc);
+            }
+        }
+
+        match self.platform.as_deref() {
+            None | Some("") => (),
+            Some(platform) => {
+                cmd.push("--platform");
+                cmd.push(platform);
+            }
+        }
+
+        match self.arch.as_deref() {
+            None | Some("") => (),
+            Some(arch) => {
+                cmd.push("--arch");
+                cmd.push(arch);
             }
         }
 
