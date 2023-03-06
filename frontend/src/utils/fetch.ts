@@ -82,6 +82,7 @@ async function fetchS3(key: string, file: File): Promise<boolean> {
   const res = await fetch(key, {
     method: "PUT",
     body: file,
+    mode: "cors",
   });
 
   if (res.status == 200) {
