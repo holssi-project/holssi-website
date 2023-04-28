@@ -30,7 +30,8 @@ export default function Project() {
   const [downloadUrl, setDownloadUrl] = useState("");
 
   const asciiAlphanumericRule = useMemo(() => new RegExp("^[A-Za-z\-0-9]*$"), []);
-  const versionRule = useMemo(() => new RegExp("^[0-9\.]*$"), []);
+  // version regex from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+  const versionRule = useMemo(() => new RegExp("^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"), []);
 
   function handleUploadClick() {
     if (file == null) return;
@@ -48,6 +49,8 @@ export default function Project() {
       .finally(() => setWaiting(false))
   }
   function handleBuildClick() {
+    if (version && !versionRule.test(version)) return setError("유효하지 않은 버전입니다. 버전은 SemVer를 만족시켜야 합니다. 참고: https://semver.org/")
+
     setWaiting(true);
     runBuild(project_id, { name, nameEn, author, version, desc })
       .then(() => {
@@ -143,7 +146,6 @@ export default function Project() {
               placeholder='0.0.1'
               value={version}
               onChange={setVersion}
-              validate={v => versionRule.test(v)}
             />
             <TextInput title='작품 설명'
               placeholder='멋진 엔트리 작품'
