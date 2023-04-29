@@ -17,8 +17,8 @@ use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer, trace::TraceLaye
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::route::{
-    build, build_failed, build_success, create, ent_presigned, exe_presigned, executable_download,
-    status,
+    build, build_failed, build_success, create, ent_presigned, ent_upload_complete, exe_presigned,
+    executable_download, status,
 };
 
 mod common;
@@ -64,6 +64,7 @@ async fn main() -> Result<()> {
         .route("/", get(|| async { "Hello, World!" }))
         .route("/project/create", post(create))
         .route("/project/:id/ent_signed", get(ent_presigned))
+        .route("/project/:id/ent_uploaded", post(ent_upload_complete))
         .route("/project/:id/status", get(status))
         .route("/project/:id/exe_signed", get(exe_presigned))
         .route("/project/:id/success", post(build_success))

@@ -33,17 +33,34 @@ pub(crate) async fn ent_presigned(
         return Ok((StatusCode::BAD_REQUEST, AppRes::fail("already uploaded")).into_response());
     }
 
-    let entry = state.db.create_ent_file(&id, &query.file_name).await?;
-    let file = File::Entry(entry);
+    let file = match state.db.select_entry_file(&id).await {
+        Ok(entry) => File::Entry(entry),
+        Err(_) => {
+            let entry = state.db.create_ent_file(&id, &query.file_name).await?;
+            File::Entry(entry)
+        }
+    };
 
     let presigned = file.get_presigned(&state.s3).await?;
 
-    let _ = state
-        .db
-        .update_project_status(&id, &ProjectStatus::Uploaded)
-        .await?;
-
     Ok(AppRes::success(presigned).into_response())
+}
+
+pub(crate) async fn ent_upload_complete(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<Response> {
+    let project = state.db.select_project_simple(&id).await?;
+
+    if project.status == ProjectStatus::Created {
+        let result = state
+            .db
+            .update_project_status(&id, &ProjectStatus::Uploaded)
+            .await?;
+        Ok(AppRes::success(result).into_response())
+    } else {
+        Ok((StatusCode::BAD_REQUEST, AppRes::fail("Bad Request")).into_response())
+    }
 }
 
 pub(crate) async fn status(
