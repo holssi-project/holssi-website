@@ -35,7 +35,7 @@ export default function Home() {
         <ErrorMsg error={error} />
         <div>
           <span className="text-red-400">*</span>현재 베타 테스트 중입니다.
-          혹시 오류가 발생한다면 <a className="text-blue-600" href="https://github.com/jedeop/holssi-website/issues">이곳</a>에 이슈를 생성해주세요.
+          혹시 오류가 발생한다면 <a className="text-blue-600 font-semibold hover:underline" href="https://github.com/jedeop/holssi-website/issues">이곳</a>에 이슈를 생성해주세요.
         </div>
         <br />
         <div>
@@ -46,6 +46,11 @@ export default function Home() {
           <span className="text-red-400">*</span>
           서비스 제공, 개선 및 연구 등을 위해 다음과 같은 정보들이 자동으로 생성되어 수집될 수 있습니다. <br />
           - IP 주소, 쿠키, 방문 일시, 서비스 이용 기록(사용자가 입력한 작품 정보 포함)
+        </div>
+        <br />
+        <div>
+          <span className="text-red-400">*</span>
+          <span className="font-semibold">홀씨</span>는 <a href="https://playentry.org/" className="font-semibold text-blue-600 hover:underline">엔트리</a> 또는 <span className="font-semibold">네이버 커넥트재단</span>에서 운영하는 서비스가 <span className="text-red-400 font-semibold">아닙니다.</span>
         </div>
       </main>
     </>
