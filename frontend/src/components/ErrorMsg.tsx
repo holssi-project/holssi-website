@@ -9,7 +9,7 @@ export default function ErrorMsg({ error }: Props) {
   const project_id = id as string;
 
   return (
-    <div>
+    <div className="flex items-center">
       { error ? <div className="text-red-500">오류: {error} ({project_id})</div> : <></>}
     </div>
   )
