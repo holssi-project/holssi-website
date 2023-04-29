@@ -17,9 +17,13 @@ export async function create(): Promise<Project> {
 export async function upload(project_id: string, file: File): Promise<boolean> {
   const url = await fetchGET<string>(`/project/${project_id}/ent_signed?file_name=${file.name}`);
 
-  const result = fetchS3(url, file);
+  const s3_result = await fetchS3(url, file);
 
-  return result;
+  if (s3_result) {
+    const _result = await fetchJSON<unknown, Project>(`/project/${project_id}/ent_uploaded`, {});
+  }
+
+  return s3_result;
 }
 
 export async function status(project_id: string): Promise<Project> {
