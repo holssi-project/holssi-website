@@ -26,6 +26,8 @@ pub(crate) struct BuildBody {
     pub(crate) desc: Option<String>,
     pub(crate) platform: Option<String>,
     pub(crate) arch: Option<String>,
+    pub(crate) use_bes: Option<bool>,
+    pub(crate) use_boost_mode: Option<bool>,
 }
 
 impl BuildBody {
@@ -68,6 +70,20 @@ impl BuildBody {
             Some(arch) => {
                 cmd.push("--arch");
                 cmd.push(arch);
+            }
+        }
+
+        match self.use_bes {
+            None | Some(false) => (),
+            Some(_) => {
+                cmd.push("--use-bes");
+            }
+        }
+
+        match self.use_boost_mode {
+            None | Some(false) => (),
+            Some(_) => {
+                cmd.push("--use-boost-mode");
             }
         }
 
