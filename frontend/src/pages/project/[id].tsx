@@ -1,4 +1,5 @@
 import Button from "@/components/Button";
+import CheckBox from "@/components/CheckBox";
 import ErrorMsg from "@/components/ErrorMsg";
 import FileInput from "@/components/FileInput";
 import Loading from "@/components/Loading";
@@ -26,6 +27,8 @@ export default function Project() {
   const [author, setAuthor] = useState("");
   const [version, setVersion] = useState("");
   const [desc, setDesc] = useState("");
+  const [useBes, setUseBes] = useState(false);
+  const [useBoostMode, setUseBoostMode] = useState(false);
 
   const [downloadUrl, setDownloadUrl] = useState("");
 
@@ -52,7 +55,7 @@ export default function Project() {
     if (version && !versionRule.test(version)) return setError("유효하지 않은 버전입니다. 버전은 SemVer를 만족시켜야 합니다. 참고: https://semver.org/")
 
     setWaiting(true);
-    runBuild(project_id, { name, nameEn, author, version, desc })
+    runBuild(project_id, { name, nameEn, author, version, desc, useBes, useBoostMode })
       .then(() => {
         setError("");
         setStep(2);
@@ -98,7 +101,7 @@ export default function Project() {
           break;
       }
     }
-  }, [project]);
+  }, [project, project_id]);
 
   return (
     <>
@@ -152,8 +155,19 @@ export default function Project() {
               value={desc}
               onChange={setDesc}
             />
+            <CheckBox title='BetterEntryScreen 사용'
+              hint='작품의 해상도를 높입니다. 일부 작품과는 호환되지 않습니다.'
+              value={useBes}
+              onChange={setUseBes}
+              labelKey="use-bes"
+            />
+            <CheckBox title='부스트 모드 사용'
+              value={useBoostMode}
+              onChange={setUseBoostMode}
+              labelKey="use-boost-mode"
+            />
             <div className='text-sm'>
-              '<span className="text-red-400">*</span>' 표시가 있는 항목은 필수로 입력해야 합니다.
+              &apos;<span className="text-red-400">*</span>&apos; 표시가 있는 항목은 필수로 입력해야 합니다.
             </div>
             <div className='flex gap-2'>
               <Button title='이전' outline onClick={() => setStep(0)} />

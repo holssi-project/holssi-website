@@ -44,6 +44,8 @@ export interface BuildData {
   author: string;
   version: string;
   desc: string;
+  useBes: boolean;
+  useBoostMode: boolean;
 }
 export async function runBuild(project_id: string, data: BuildData): Promise<Project> {
 

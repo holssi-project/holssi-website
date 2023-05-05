@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Project, status } from "./fetch";
 
 export function useProjectStatus(id: string, now: boolean): Project | null {
   let [project, setProject] = useState<Project | null>(null);
   let [lastCallback, setLastCallback] = useState<any>();
 
-  function check() {
+  const check = useCallback(() => {
     console.log("checking run")
     if (!now) return;
     console.log("really checking run")
@@ -17,7 +17,7 @@ export function useProjectStatus(id: string, now: boolean): Project | null {
         let t = setTimeout(check, 15 * 1000);
         setLastCallback(t);
       })
-  }
+  }, [id, now])
 
   useEffect(() => {
     if (lastCallback) clearTimeout(lastCallback);
@@ -25,6 +25,7 @@ export function useProjectStatus(id: string, now: boolean): Project | null {
     return () => {
       clearTimeout(lastCallback);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [now])
 
   return project;
