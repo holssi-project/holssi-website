@@ -3,9 +3,29 @@ export interface Response<T> {
   data: T
 }
 export interface Project {
-    project_id: string,
-    status: 'Created' | 'Uploaded' | 'Building' | 'Success' | 'Failed',
-    created: string,
+  project_id: string,
+  status: 'Created' | 'Uploaded' | 'Building' | 'Success' | 'Failed',
+  created: string,
+}
+
+export type Target = "win64" | "mac_intel" | "mac_arm";
+export function targetToPlatform(target: Target): string {
+  switch (target) {
+    case "win64":
+      return "win";
+    case "mac_intel":
+    case "mac_arm":
+      return "mac";
+  }
+}
+export function targetToArch(target: Target): string {
+  switch (target) {
+    case "win64":
+    case "mac_intel":
+      return "x64";
+    case "mac_arm":
+      return "arm64";
+  }
 }
 
 export async function create(): Promise<Project> {
@@ -46,6 +66,8 @@ export interface BuildData {
   desc: string;
   useBes: boolean;
   useBoostMode: boolean;
+  platform: string;
+  arch: string;
 }
 export async function runBuild(project_id: string, data: BuildData): Promise<Project> {
 

@@ -4,9 +4,10 @@ import ErrorMsg from "@/components/ErrorMsg";
 import FileInput from "@/components/FileInput";
 import Loading from "@/components/Loading";
 import Nav from "@/components/Nav";
+import RadioBox from "@/components/RadioBox";
 import Section from "@/components/Section";
 import TextInput from "@/components/TextInput";
-import { upload, runBuild, download_url } from "@/utils/fetch";
+import { upload, runBuild, download_url, Target, targetToPlatform, targetToArch } from "@/utils/fetch";
 import { useProjectStatus } from "@/utils/hook";
 import Head from "next/head";
 import { useRouter } from "next/router";
@@ -29,6 +30,7 @@ export default function Project() {
   const [desc, setDesc] = useState("");
   const [useBes, setUseBes] = useState(false);
   const [useBoostMode, setUseBoostMode] = useState(false);
+  const [target, setTarget] = useState<Target>("win64");
 
   const [downloadUrl, setDownloadUrl] = useState("");
 
@@ -55,7 +57,17 @@ export default function Project() {
     if (version && !versionRule.test(version)) return setError("유효하지 않은 버전입니다. 버전은 SemVer를 만족시켜야 합니다. 참고: https://semver.org/")
 
     setWaiting(true);
-    runBuild(project_id, { name, nameEn, author, version, desc, useBes, useBoostMode })
+    runBuild(project_id, {
+      name,
+      nameEn,
+      author,
+      version,
+      desc,
+      useBes,
+      useBoostMode,
+      platform: targetToPlatform(target),
+      arch: targetToArch(target)
+    })
       .then(() => {
         setError("");
         setStep(2);
@@ -154,6 +166,16 @@ export default function Project() {
               placeholder='멋진 엔트리 작품'
               value={desc}
               onChange={setDesc}
+            />
+            <RadioBox
+              title="타겟"
+              value={target}
+              onChange={setTarget}
+              options={[
+                { label: "Windows (x64)", value: "win64" },
+                { label: "MacOS (Intel)", value: "mac_intel" },
+                { label: "MacOS (Apple Silicon)", value: "mac_arm" },
+              ]}
             />
             <CheckBox title='BetterEntryScreen 사용'
               hint='작품의 해상도를 높입니다. 일부 작품과는 호환되지 않습니다.'
