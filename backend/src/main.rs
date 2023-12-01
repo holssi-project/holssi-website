@@ -90,9 +90,8 @@ async fn main() -> Result<()> {
 
     let addr = SocketAddr::new(Ipv6Addr::UNSPECIFIED.into(), 9000);
     tracing::debug!("listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 
     Ok(())
 }

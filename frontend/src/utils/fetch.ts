@@ -4,7 +4,7 @@ export interface Response<T> {
 }
 export interface Project {
   project_id: string,
-  status: 'Created' | 'Uploaded' | 'Building' | 'Success' | 'Failed',
+  status: 'Unknown' | 'Created' | 'Uploaded' | 'Building' | 'Success' | 'Failed',
   created: string,
 }
 

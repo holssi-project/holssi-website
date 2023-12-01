@@ -1,33 +1,20 @@
-import { ChangeEvent } from "react";
-
-interface Props {
-  title: string;
-  placeholder?: string;
-  required?: boolean;
+interface TextInputProps {
   value: string;
-  onChange: (value: string) => void;
-  validate?: (value: string) => boolean;
+  onChange: (text: string) => void;
+  placeholder?: string;
+  validate?: (text: string) => boolean;
 }
-function TextInput({ title, placeholder, required, value, onChange, validate }: Props) {
-  function handleChange(e: ChangeEvent<HTMLInputElement>) {
-    const value = e.target.value;
 
-    if (validate && !validate(value)) return;
+export default function TextInput({ value, onChange, placeholder, validate }: TextInputProps) {
 
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (validate && !validate(e.target.value)) return;
     onChange(e.target.value);
   }
+
   return (
-    <div className="border rounded-md border-slate-900/20 flex my-3 overflow-hidden flex-col sm:flex-row">
-      <label className="font-medium text-lg py-1 px-3 w-32">{title}{required ? <span className="text-red-400">*</span> : ''}</label>
-      <input type="text"
-        className="outline-none py-1 px-3 flex-1 border-t sm:border-l sm:border-t-0 border-slate-900/20 rounded-none"
-        placeholder={placeholder}
-        required={required}
-        value={value}
-        onChange={handleChange}
-      />
-    </div>
+    <input type="text" value={value} onChange={handleChange} placeholder={placeholder}
+      className="w-full p-1 rounded-md border border-emerald-500 font-body text-emerald-500 outline-none text-base placeholder:text-emerald-500/30" 
+    />
   )
 }
-
-export default TextInput
