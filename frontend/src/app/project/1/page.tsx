@@ -42,8 +42,10 @@ export default function Page() {
           setError("");
           router.push(`./2`);
         })
-        .catch(err => setError(`${err}`))
-        .finally(() => setIsLoading(false))
+        .catch(err => {
+          setError(`${err}`)
+          setIsLoading(false);
+        })
     }
 
   }
