@@ -1,4 +1,6 @@
-import Script from "next/script"
+"use client";
+
+import Script from "next/script";
 
 const ADFIT_ID = process.env.NEXT_PUBLIC_ADFIT_ID || ''
 

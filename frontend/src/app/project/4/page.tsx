@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import AdfitAd from "@/components/AdfitAd";
 import Loading from "@/components/Loading";
@@ -22,11 +22,13 @@ export default function Page() {
     return () => clearInterval(id);
   }, [dispatch]);
 
-  if (project?.status === "Success" || project?.status === "Failed") {
-    route.push(`./5`);
-  } else if (!project) {
-    route.push(`/`);
-  }
+  useEffect(() => {
+    if (project?.status === "Success" || project?.status === "Failed") {
+      route.push(`./5`);
+    } else if (!project) {
+      route.push(`/`);
+    }
+  }, [project, route])
 
   return (
     <>
