@@ -24,6 +24,8 @@ export default function Page() {
 
   if (project?.status === "Success" || project?.status === "Failed") {
     route.push(`./5`);
+  } else if (!project) {
+    route.push(`/`);
   }
 
   return (
