@@ -22,6 +22,7 @@ export default function Page() {
   const [description, setDescription] = useState("");
 
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const asciiAlphanumericRule = useMemo(() => new RegExp("^[A-Za-z\-0-9]*$"), []);
   // version regex from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
@@ -31,6 +32,7 @@ export default function Page() {
   function handleNextClick() {
     if (version && !versionRule.test(version)) return setError("유효하지 않은 버전입니다. 버전은 SemVer를 만족시켜야 합니다. 참고: https://semver.org/")
 
+    setIsLoading(true);
     dispatch(projectDataSavedStep1({
       name: projectName,
       nameEn: projectNameEn,
@@ -67,7 +69,7 @@ export default function Page() {
         </div>
       </div>
       <BottomContainer>
-        <Button text="다음" onClick={handleNextClick} disabled={!projectNameEn || !author} />
+        <Button text="다음" onClick={handleNextClick} disabled={!projectNameEn || !author || isLoading} />
         {error && <Error msg={error} />}
       </BottomContainer>
     </>
