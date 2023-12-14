@@ -3,9 +3,24 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-const ADFIT_ID = process.env.NEXT_PUBLIC_ADFIT_ID || ''
+const ADFIT = [
+  {
+    id: process.env.NEXT_PUBLIC_ADFIT_ID_1 || '',
+    width: 320,
+    height: 100,
+  },
+  {
+    id: process.env.NEXT_PUBLIC_ADFIT_ID_2 || '',
+    width: 320,
+    height: 50,
+  }
+];
 
-export default function AdfitAd() {
+interface AdfitAdProps {
+  type: 0 | 1;
+}
+
+export default function AdfitAd({ type }: AdfitAdProps) {
   const router = useRouter();
 
   useEffect(() => {
@@ -25,9 +40,9 @@ export default function AdfitAd() {
   return (
     <>
       <ins className="kakao_ad_area" style={{ display: "none" }}
-        data-ad-unit={ADFIT_ID}
-        data-ad-width="320"
-        data-ad-height="100"></ins>
+        data-ad-unit={ADFIT[type].id}
+        data-ad-width={ADFIT[type].width}
+        data-ad-height={ADFIT[type].height}></ins>
     </>
   )
 }

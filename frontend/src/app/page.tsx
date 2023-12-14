@@ -1,5 +1,6 @@
 "use client";
 
+import AdfitAd from '@/components/AdfitAd';
 import AppTitle from '@/components/AppTitle'
 import BottomContainer from '@/components/BottomContainer';
 import Button from '@/components/Button'
@@ -34,7 +35,9 @@ export default function Home() {
 
   return (
     <>
-      <div></div>
+      <div>
+        <AdfitAd type={1} />
+      </div>
       <AppTitle />
       <BottomContainer>
         <Button text="시작하기" onClick={handleStartBtnClick} disabled={isLoading} />
@@ -48,9 +51,7 @@ export default function Home() {
           홀씨는 엔트리 또는 네이버 커넥트재단에서 운영하는 서비스가 아닙니다.
         </div>
         <div className="text-slate-500 text-sm font-body">
-          홀씨 및 홀씨 웹사이트의 소스코드는 GitHub에 공개되어 있습니다. {"> "}
-          <Link href="https://github.com/jedeop/holssi" className='underline'>홀씨 Github</Link>,{" "}
-          <Link href="https://github.com/jedeop/holssi-website" className='underline'>홀씨 웹사이트 GitHub</Link>
+          GitHub에서 <Link href="https://github.com/jedeop/holssi" className='underline'>홀씨</Link> 및 <Link href="https://github.com/jedeop/holssi-website" className='underline'>홀씨 웹사이트</Link>의 소스코드를 확인하실 수 있습니다.
         </div>
       </BottomContainer>
     </>

@@ -43,7 +43,7 @@ export default function Page() {
             </div>
             <BottomContainer>
               <div className="mb-4">
-                <AdfitAd />
+                <AdfitAd type={0} />
               </div>
               <Button text="다운로드" onClick={handleDownloadClick} disabled={isLoading} />
               {error && <Error msg={error} detail />}
