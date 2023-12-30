@@ -26,12 +26,13 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(false);
 
   function handleNextClick() {
-    dispatch(projectDataSavedStep2({
+    const projectData = {
       platform: targetToPlatform(target),
       arch: targetToArch(target),
       useBes: besEnable === "true",
       useBoostMode: boostModeEnable === "true",
-    }));
+    }
+    dispatch(projectDataSavedStep2(projectData));
 
     if (!projectId || !buildData || !buildData.nameEn) {
       setError("잘못된 접근입니다. 처음부터 다시 시도해주세요.")
@@ -39,7 +40,10 @@ export default function Page() {
     }
 
     setIsLoading(true);
-    runBuild(projectId, buildData as BuildData)
+    runBuild(projectId, {
+      ...buildData,
+      ...projectData,
+    } as BuildData)
       .then(() => {
         setError("");
         router.push(`./4`);
@@ -59,8 +63,8 @@ export default function Page() {
           <ItemTitle title="타겟" desc="어떤 운영체제를 위한 실행 파일을 만들지 선택해주세요." />
           <Radio value={target} onChange={setTarget} items={[
             { value: "win64", label: "Windows (x64)" },
-            { value: "mac_intel", label: "MacOS (Intel)" },
-            { value: "mac_arm", label: "MacOS (Apple Silicon)" },
+            // { value: "mac_intel", label: "MacOS (Intel)" },
+            // { value: "mac_arm", label: "MacOS (Apple Silicon)" },
           ]} />
         </div>
         <div>
