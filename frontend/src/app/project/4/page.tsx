@@ -39,7 +39,7 @@ export default function Page() {
         <Loading size={64} />
       </div>
       <div>
-        <AdfitAd type={0} />
+        <AdfitAd type={2} />
       </div>
     </>
   )

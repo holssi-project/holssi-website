@@ -13,11 +13,16 @@ const ADFIT = [
     id: process.env.NEXT_PUBLIC_ADFIT_ID_2 || '',
     width: 320,
     height: 50,
+  },
+  {
+    id: process.env.NEXT_PUBLIC_ADFIT_ID_3 || '',
+    width: 300,
+    height: 250,
   }
 ];
 
 interface AdfitAdProps {
-  type: 0 | 1;
+  type: 0 | 1 | 2;
 }
 
 export default function AdfitAd({ type }: AdfitAdProps) {
