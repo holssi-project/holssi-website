@@ -5,33 +5,38 @@ import BottomContainer from "@/components/BottomContainer";
 import Button from "@/components/Button";
 import Error from "@/components/Error";
 import PageTitle from "@/components/PageTitle";
-import { useAppSelector } from "@/store/hooks";
 import { download_url } from "@/utils/fetch";
+import { useProjectStatus } from "@/utils/hooks";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export type Target = "win64" | "mac_intel" | "mac_arm";
 
-export default function Page() {
+interface ResultProps {
+  projectId: string;
+}
+
+export default function Result({ projectId }: ResultProps) {
   const route = useRouter();
-  const projectId = useAppSelector(state => state.project.project?.project_id);
-  const projectStatus = useAppSelector(state => state.project.project?.status);
+  const [projectStatus, status_error] = useProjectStatus(projectId);
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   function handleDownloadClick() {
-    if (!projectId) {
-      setError("잘못된 접근입니다. 처음부터 다시 시도해주세요.")
-      return;
-    }
     setIsLoading(true);
     download_url(projectId)
       .then(d => window.open(d))
       .catch(err => setError(`${err}`))
       .finally(() => setIsLoading(false))
   }
+
+  useEffect(() => {
+    if (status_error !== "") {
+      setError(status_error)
+    }
+  }, [status_error])
 
   return (
     <>

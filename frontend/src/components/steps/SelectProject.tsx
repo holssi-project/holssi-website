@@ -8,15 +8,15 @@ import ItemTitle from "@/components/ItemTitle";
 import PageTitle from "@/components/PageTitle";
 import SegmentedControl from "@/components/SegmentedControl";
 import TextInput from "@/components/TextInput";
-import { useAppSelector } from "@/store/hooks";
 import { upload } from "@/utils/fetch";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function Page() {
-  const router = useRouter();
-  const projectId = useAppSelector(state => state.project.project?.project_id);
+interface SelectProjectProps {
+  projectId: string;
+  next: () => void;
+}
 
+export default function SelectProject({ projectId, next }: SelectProjectProps) {
   const [inputType, setInputType] = useState("file");
 
   const [url, setUrl] = useState("");
@@ -30,17 +30,12 @@ export default function Page() {
   }
 
   function handleNextClick() {
-    if (!projectId) {
-      setError("잘못된 접근입니다. 처음부터 다시 시도해주세요.")
-      return;
-    }
-
     if (inputType === "file") {
       setIsLoading(true);
       upload(projectId, file!)
         .then(() => {
           setError("");
-          router.push(`./2`);
+          next();
         })
         .catch(err => {
           setError(`${err}`)

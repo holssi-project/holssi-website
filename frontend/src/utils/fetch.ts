@@ -2,9 +2,10 @@ export interface Response<T> {
   success: boolean,
   data: T
 }
+export type ProjectStatus = 'Unknown' | 'Created' | 'Uploaded' | 'Building' | 'Success' | 'Failed'
 export interface Project {
   project_id: string,
-  status: 'Unknown' | 'Created' | 'Uploaded' | 'Building' | 'Success' | 'Failed',
+  status: ProjectStatus,
   created: string,
 }
 

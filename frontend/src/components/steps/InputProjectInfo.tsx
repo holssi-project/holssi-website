@@ -8,11 +8,13 @@ import PageTitle from "@/components/PageTitle";
 import TextInput from "@/components/TextInput";
 import { useAppDispatch } from "@/store/hooks";
 import { projectDataSavedStep1 } from "@/store/projectSlice";
-import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
-export default function Page() {
-  const router = useRouter();
+interface InputProjectInfoProps {
+  next: () => void;
+}
+
+export default function InputProjectInfo({ next } : InputProjectInfoProps) {
   const dispatch = useAppDispatch();
 
   const [projectName, setProjectName] = useState("");
@@ -30,7 +32,7 @@ export default function Page() {
 
 
   function handleNextClick() {
-    if (version && !versionRule.test(version)) return setError("유효하지 않은 버전입니다. 버전은 SemVer를 만족시켜야 합니다. 참고: https://semver.org/")
+    if (version && !versionRule.test(version)) return setError("입력하신 버전이 유효하지 않습니다. 버전은 SemVer를 만족시켜야 합니다. 참고: https://semver.org/")
 
     setIsLoading(true);
     dispatch(projectDataSavedStep1({
@@ -39,8 +41,9 @@ export default function Page() {
       author,
       version,
       desc: description,
-    }))
-    router.push(`./3`);
+    }));
+
+    next();
   }
 
   return (

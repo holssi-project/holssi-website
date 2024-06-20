@@ -9,13 +9,15 @@ import Radio from "@/components/Radio";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { projectDataSavedStep2 } from "@/store/projectSlice";
 import { BuildData, Target, runBuild, targetToArch, targetToPlatform } from "@/utils/fetch";
-import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function Page() {
-  const router = useRouter();
+interface SelectOptionProps {
+  projectId: string;
+  next: () => void;
+}
+export default function SelectOption({ projectId, next }: SelectOptionProps) {
   const dispatch = useAppDispatch();
-  const projectId = useAppSelector(state => state.project.project?.project_id);
+  // const projectId = useAppSelector(state => state.project.project?.project_id);
   const buildData = useAppSelector(state => state.project.build_data);
 
   const [target, setTarget] = useState<Target>("win64");
@@ -46,7 +48,7 @@ export default function Page() {
     } as BuildData)
       .then(() => {
         setError("");
-        router.push(`./4`);
+        next();
       })
       .catch(err => {
         setError(`${err}`)

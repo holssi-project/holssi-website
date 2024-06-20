@@ -5,8 +5,6 @@ import AppTitle from '@/components/AppTitle'
 import BottomContainer from '@/components/BottomContainer';
 import Button from '@/components/Button'
 import Error from '@/components/Error';
-import { useAppDispatch } from '@/store/hooks';
-import { projectCreated } from '@/store/projectSlice';
 import { create } from '@/utils/fetch';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -14,7 +12,6 @@ import { useState } from 'react';
 
 export default function Home() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,8 +21,7 @@ export default function Home() {
     create()
       .then(project => {
         console.log(project);
-        dispatch(projectCreated(project));
-        router.push(`/project/1`)
+        router.push(`/project?id=${project.project_id}`)
       })
       .catch(e => {
         setError(e.message);

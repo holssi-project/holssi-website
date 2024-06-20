@@ -30,7 +30,7 @@ export default function Home() {
             <li>
               <h4 className="font-body text-lg font-semibold inline">IP 주소, 쿠키, 방문 일시, 서비스 이용 기록 등</h4>
               <div className='font-body text-base'>서비스 제공, 개선 및 연구 등을 위해 수집됩니다.</div>
-              <div className='font-body text-base'>fly.io, Vercel, Google, Kakao와 공유될 수 있습니다.</div>
+              <div className='font-body text-base'>fly.io, Vercel, Google, Kakao, Cloudflare와 공유될 수 있습니다.</div>
             </li>
           </ul>
         </div>
