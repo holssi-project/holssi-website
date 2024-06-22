@@ -7,7 +7,6 @@ use axum::{
 use uuid::Uuid;
 
 use crate::{
-    builder::flyio::RunMachineOption,
     common::AppRes,
     file::File,
     project::{ProjectSimple, ProjectStatus},
@@ -138,9 +137,16 @@ pub(crate) async fn build(
     if project.status == ProjectStatus::Uploaded {
         let file = state.db.select_entry_file(&id).await?;
 
-        let opt = RunMachineOption::new(build_info, id, project.build_nonce, File::Entry(file));
-
-        state.builder_tx.send(opt).await?;
+        state
+            .fly_io
+            .create_machine(
+                &state.reqwest,
+                build_info,
+                &id.to_string(),
+                &project.build_nonce,
+                File::Entry(file),
+            )
+            .await?;
 
         let result = state
             .db
@@ -161,7 +167,7 @@ pub(crate) async fn executable_download(
     if project.status == ProjectStatus::Success {
         let exe = state.db.select_executable_file(&id).await?;
         let file = File::Executable(exe);
-        let url = format!("{}/{}", state.s3_base_url, file.key_url());
+        let url = format!("{}/{}", state.fly_io.s3_base_url(), file.key_url());
         Ok(AppRes::success(url).into_response())
     } else {
         Ok((StatusCode::BAD_REQUEST, AppRes::fail("Bad Request")).into_response())

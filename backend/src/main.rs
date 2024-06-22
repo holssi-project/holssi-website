@@ -10,10 +10,9 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use builder::{flyio::FlyIO, Builder, BuilderTx};
 use common::AppRes;
 use db::Database;
-use tokio::sync::mpsc;
+use flyio::FlyIO;
 use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -22,10 +21,10 @@ use crate::route::{
     executable_download, status,
 };
 
-mod builder;
 mod common;
 mod db;
 mod file;
+mod flyio;
 mod project;
 mod query;
 mod route;
@@ -52,22 +51,13 @@ async fn main() -> Result<()> {
     };
 
     let reqwest_client = reqwest::Client::new();
-    let fly_io = FlyIO::new(reqwest_client);
-    let (tx, rx) = mpsc::channel(64);
-    let mut builder = Builder::new(fly_io, rx);
-
-    tokio::spawn(async move {
-        builder.run(3).await.unwrap();
-    });
-
-    let s3_base_url =
-        env::var("AWS_S3_PUBLIC_BASE_URL").expect("env AWS_S3_PUBLIC_BASE_URL missing");
+    let fly_io = FlyIO::new();
 
     let shared_state = AppState {
         db,
         s3,
-        builder_tx: tx,
-        s3_base_url,
+        reqwest: reqwest_client,
+        fly_io,
     };
 
     let app = Router::new()
@@ -110,8 +100,8 @@ async fn main() -> Result<()> {
 struct AppState {
     db: Database,
     s3: aws_sdk_s3::Client,
-    builder_tx: BuilderTx,
-    s3_base_url: String,
+    reqwest: reqwest::Client,
+    fly_io: FlyIO,
 }
 
 #[derive(Debug)]
