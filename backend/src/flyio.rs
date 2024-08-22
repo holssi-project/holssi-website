@@ -46,11 +46,11 @@ impl FlyIO {
             .header("Authorization", format!("Bearer {}", self.0.api_token))
             .json(&json!({
               "config": {
-                "image": "ghcr.io/jedeop/holssi:website-latest",
+                "image": "ghcr.io/holssi-project/holssi:website-latest",
                 "guest": {
                   "cpu_kind": "shared",
                   "cpus": 1,
-                  "memory_mb": 1024
+                  "memory_mb": 2048
                 },
                 "processes": [
                   {
