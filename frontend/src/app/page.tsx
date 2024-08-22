@@ -47,7 +47,7 @@ export default function Home() {
           홀씨는 엔트리 또는 네이버 커넥트재단에서 운영하는 서비스가 아닙니다.
         </div>
         <div className="text-slate-500 text-sm font-body">
-          GitHub에서 <Link href="https://github.com/jedeop/holssi" className='underline'>홀씨</Link> 및 <Link href="https://github.com/jedeop/holssi-website" className='underline'>홀씨 웹사이트</Link>의 소스코드를 확인하실 수 있습니다.
+          GitHub에서 <Link href="https://github.com/holssi-project/holssi" className='underline'>홀씨</Link> 및 <Link href="https://github.com/holssi-project/holssi-website" className='underline'>홀씨 웹사이트</Link>의 소스코드를 확인하실 수 있습니다.
         </div>
       </BottomContainer>
     </>
